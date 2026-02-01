@@ -15,10 +15,68 @@
         android:src="@drawable/background_image"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_status_text_v"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_status_text_h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.15" />
+
+    <TextView
+        android:id="@+id/text_conversion_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:textColor="#546E7A"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/guideline_status_text_h"
+        app:layout_constraintEnd_toEndOf="@id/guideline_status_text_v"
+        app:layout_constraintStart_toStartOf="@id/guideline_status_text_v"
+        app:layout_constraintTop_toTopOf="@id/guideline_status_text_h"
+        tools:text="成功: 5\n失败: 1\nfailed_file.ncm" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_convert_button_v"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.51" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_convert_button_h"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.31" />
+
+    <Button
+        android:id="@+id/button_start_conversion"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="84dp"
+        android:layout_height="57dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:letterSpacing="0.2"
+        android:minHeight="40dp"
+        android:text="转换"
+        android:textColor="#00FF00"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/guideline_convert_button_h"
+        app:layout_constraintEnd_toEndOf="@id/guideline_convert_button_v"
+        app:layout_constraintStart_toStartOf="@id/guideline_convert_button_v"
+        app:layout_constraintTop_toTopOf="@id/guideline_convert_button_h" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_source_button_v"
@@ -39,8 +97,10 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="88dp"
+        android:minHeight="48dp"
         android:text="源目录"
-        android:textColor="@android:color/black"
+        android:textColor="#191970"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/guideline_source_button_h"
@@ -53,13 +113,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.05" />
+        app:layout_constraintGuide_percent="0.08" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_source_text_v_end"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.39" />
+        app:layout_constraintGuide_percent="0.37" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_source_text_h_bottom"
         android:layout_width="wrap_content"
@@ -70,14 +132,17 @@
     <TextView
         android:id="@+id/text_source_path"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:gravity="end|bottom"
-        android:maxLines="4"
-        android:textColor="@android:color/black"
-        android:textSize="12sp"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="11"
+        android:textColor="#2F4F4F"
+        android:textSize="10sp"
         app:layout_constraintBottom_toBottomOf="@id/guideline_source_text_h_bottom"
         app:layout_constraintEnd_toEndOf="@id/guideline_source_text_v_end"
         app:layout_constraintStart_toStartOf="@id/guideline_source_text_v_start"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
         tools:text="/storage/emulated/0/Music/Source/example.ncm" />
 
     <androidx.constraintlayout.widget.Guideline
@@ -99,8 +164,10 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="88dp"
+        android:minHeight="48dp"
         android:text="输出"
-        android:textColor="@android:color/black"
+        android:textColor="#D50000"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/guideline_output_button_h"
@@ -114,12 +181,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.62" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_output_text_v_end"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.95" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_output_text_h_bottom"
         android:layout_width="wrap_content"
@@ -130,67 +199,17 @@
     <TextView
         android:id="@+id/text_output_path"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:gravity="start|bottom"
-        android:maxLines="4"
-        android:textColor="@android:color/black"
-        android:textSize="12sp"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="11"
+        android:textColor="#2F4F4F"
+        android:textSize="10sp"
         app:layout_constraintBottom_toBottomOf="@id/guideline_output_text_h_bottom"
         app:layout_constraintEnd_toEndOf="@id/guideline_output_text_v_end"
         app:layout_constraintStart_toStartOf="@id/guideline_output_text_v_start"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
         tools:text="/storage/emulated/0/Music/Output/result.mp3" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_convert_button_v"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.53" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_convert_button_h"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.31" />
-
-    <Button
-        android:id="@+id/button_start_conversion"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="转换"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/guideline_convert_button_h"
-        app:layout_constraintEnd_toEndOf="@id/guideline_convert_button_v"
-        app:layout_constraintStart_toStartOf="@id/guideline_convert_button_v"
-        app:layout_constraintTop_toTopOf="@id/guideline_convert_button_h" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_status_text_v"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_status_text_h"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.16" />
-
-    <TextView
-        android:id="@+id/text_conversion_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        app:layout_constraintBottom_toBottomOf="@id/guideline_status_text_h"
-        app:layout_constraintEnd_toEndOf="@id/guideline_status_text_v"
-        app:layout_constraintStart_toStartOf="@id/guideline_status_text_v"
-        app:layout_constraintTop_toTopOf="@id/guideline_status_text_h"
-        tools:text="成功: 5\n失败: 1\nfailed_file.ncm" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

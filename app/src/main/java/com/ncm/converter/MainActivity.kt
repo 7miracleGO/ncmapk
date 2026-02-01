@@ -10,6 +10,7 @@ import android.provider.DocumentsContract
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
         btnSelectSource.setOnClickListener { sourceDirPickerLauncher.launch(null) }
         btnSelectOutput.setOnClickListener { outputDirPickerLauncher.launch(null) }
 
-        btnStartConversion.setOnClickListener { 
+        btnStartConversion.setOnClickListener {
             val currentSourceUri = sourceUri
             if (currentSourceUri == null) {
                 Toast.makeText(this, "请先选择源目录", Toast.LENGTH_SHORT).show()
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
             dialog.show(supportFragmentManager, "FileListDialog")
         }
     }
-    
+
     override fun onConvert(selectedFiles: List<NcmFileItem>, deleteSource: Boolean) {
         startBatchConversion(selectedFiles, deleteSource)
     }
@@ -108,8 +109,9 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
         runOnUiThread {
             statusClearHandler.removeCallbacksAndMessages(null)
             textConversionStatus.text = message
-            // If a color is provided, set it. Otherwise, let the SpannableString control the color.
-            color?.let { textConversionStatus.setTextColor(it) }
+            if (color != null) {
+                textConversionStatus.setTextColor(color)
+            }
             textConversionStatus.visibility = View.VISIBLE
             if (duration > 0) {
                 statusClearHandler.postDelayed({ textConversionStatus.visibility = View.GONE }, duration)
@@ -124,7 +126,7 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
             val failedFiles = mutableListOf<String>()
 
             for ((index, fileItem) in filesToConvert.withIndex()) {
-                val statusText = "转换中 (${index + 1}/${filesToConvert.size}): ${fileItem.songTitle}"
+                val statusText = "正在转换 (${index + 1}/${filesToConvert.size}): ${fileItem.songTitle}"
                 updateConversionStatus(statusText, -1, Color.GRAY)
 
                 val result = processTask(fileItem, outputUri!!)
@@ -134,7 +136,7 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
                         try {
                             DocumentsContract.deleteDocument(contentResolver, fileItem.uri)
                         } catch (e: Exception) {
-                            Log.e(TAG, "删除源文件失败: ${fileItem.originalName}", e)
+                            Log.e(TAG, "Error deleting source", e)
                         }
                     }
                 } else {
@@ -147,22 +149,24 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
                 if (failureCount > 0) {
                     val builder = SpannableStringBuilder()
                     val successText = SpannableString("成功: $successCount\n")
-                    successText.setSpan(ForegroundColorSpan(Color.GREEN), 0, successText.length, 0)
+                    successText.setSpan(ForegroundColorSpan(Color.GRAY), 0, successText.length, 0)
                     builder.append(successText)
-
-                    val failureText = SpannableString("失败: $failureCount\n")
+                    val failureText = SpannableString("失败: $failureCount\n\n")
                     failureText.setSpan(ForegroundColorSpan(Color.RED), 0, failureText.length, 0)
                     builder.append(failureText)
-                    
-                    // Reset text color for the list of failed files
-                    textConversionStatus.setTextColor(Color.BLACK)
-                    builder.append(failedFiles.joinToString("\n"))
-
-                    updateConversionStatus(builder, 20000)
+                    failedFiles.forEach { fileName ->
+                        val start = builder.length
+                        builder.append("$fileName\n")
+                        val end = builder.length
+                        builder.setSpan(ForegroundColorSpan(Color.RED), start, end, 0)
+                        builder.setSpan(RelativeSizeSpan(1.3f), start, end, 0)
+                    }
+                    updateConversionStatus(builder, 20000, null)
                 } else {
-                    val successMessage = "转换全部成功! (共 $successCount 个)"
+                    val successMessage = "转换成功 (共 $successCount 个)"
                     updateConversionStatus(successMessage, 8000, Color.GRAY)
                 }
+                clearCache()
             }
         }
     }
@@ -173,14 +177,11 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
             this.contentResolver.openInputStream(inputItem.uri)?.use { input ->
                 FileOutputStream(cacheFile).use { output -> input.copyTo(output) }
             }
-
             val metadataJson = getNcmMetadata(cacheFile.absolutePath)
-            if (metadataJson.length <= 2) { // 检查是否为空JSON "{}"
-                Log.e(TAG, "元数据为空，可能是个假ncm文件: ${inputItem.originalName}")
+            if (metadataJson.length <= 2) {
                 cacheFile.delete()
                 return false
             }
-
             val json = JSONObject(metadataJson)
             val title = json.optString("musicName", inputItem.songTitle)
             val album = json.optString("album", "Unknown Album")
@@ -195,37 +196,33 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
             } else null
 
             val result = unlockNcm(cacheFile.absolutePath, this.cacheDir.absolutePath + "/", title, artist, album, coverData)
-
             if (result == 1) {
                 val outputNameWithoutExt = inputItem.originalName.removeSuffix(".ncm")
-                val generatedFile = this.cacheDir.listFiles()?.find { 
-                    it.nameWithoutExtension == outputNameWithoutExt && (it.extension.lowercase() == "mp3" || it.extension.lowercase() == "flac") 
+                val generatedFile = this.cacheDir.listFiles()?.find {
+                    it.nameWithoutExtension == outputNameWithoutExt && (it.extension.lowercase() == "mp3" || it.extension.lowercase() == "flac")
                 }
                 if (generatedFile != null && generatedFile.exists()) {
-                    return exportToFixedDir(generatedFile, generatedFile.name, outputDirUri)
-                } else {
-                    Log.e(TAG, "转换成功但找不到输出文件: ${inputItem.originalName}")
-                    return false
+                    val success = exportToFixedDir(generatedFile, generatedFile.name, outputDirUri)
+                    generatedFile.delete()
+                    cacheFile.delete()
+                    return success
                 }
-            } else {
-                Log.e(TAG, "unlockNcm 核心代码返回失败代码: $result, 文件: ${inputItem.originalName}")
-                return false
             }
+            return false
         } catch (e: Exception) {
-            Log.e(TAG, "处理文件时发生致命错误: ${inputItem.originalName}", e)
             return false
         }
     }
-    
+
     private fun loadSavedUris() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.getString(KEY_SOURCE_URI, null)?.let {
             sourceUri = Uri.parse(it)
-            updatePathTextView(textSourcePath, Uri.parse(it))
+            updatePathTextView(textSourcePath, sourceUri!!)
         }
         prefs.getString(KEY_OUTPUT_URI, null)?.let {
             outputUri = Uri.parse(it)
-            updatePathTextView(textOutputPath, Uri.parse(it))
+            updatePathTextView(textOutputPath, outputUri!!)
         }
     }
 
@@ -235,51 +232,40 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
     }
 
     private fun updatePathTextView(textView: TextView, uri: Uri) {
+        val cryText = "侧边栏虚拟入口进入目录无法解析路径😭 我有强迫症我心里不得劲了 请从侧边栏选择 [手机型号/内部存储] 进入[download/下载]文件夹吧 求你了(颜文字特殊符号显示不对)呜呜呜呜"
         try {
-            var friendlyPath = ""
-            val authority = uri.authority
+            val docId = DocumentsContract.getTreeDocumentId(uri)
 
-            if (authority == "com.android.providers.downloads.documents") {
-                val docId = DocumentsContract.getTreeDocumentId(uri)
-                val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId)
-                contentResolver.query(docUri, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val displayName = cursor.getString(0)
-                        friendlyPath = if (docId == "downloads") "下载" else "下载/$displayName"
-                    }
-                }
+            val isVirtual = docId.matches(Regex("^\\d+$")) ||
+                    docId.startsWith("msf:") ||
+                    docId.startsWith("raw:") ||
+                    !docId.contains(":")
+
+            if (isVirtual) {
+                textView.text = cryText
             } else {
-                val path = uri.path
-                if (path != null) {
-                    val decodedPath = Uri.decode(path)
-                    val tempPath = decodedPath.removePrefix("/tree/")
+                val decodedId = Uri.decode(docId)
+                val friendlyPath = when {
+                    decodedId.startsWith("primary:") -> decodedId.replaceFirst("primary:", "内部存储/")
+                    else -> decodedId.substringAfter(":")
+                }
 
-                    friendlyPath = when {
-                        tempPath.startsWith("primary:") ->
-                            tempPath.replaceFirst("primary:", "内部存储/")
-                        tempPath.matches(Regex("^[0-9A-F]{4}-[0-9A-F]{4}:.*$")) ->
-                            "SD卡/" + tempPath.substringAfter(":", "")
-                        tempPath.contains(":") -> {
-                            val parts = tempPath.split(":", limit = 2)
-                            "存储设备 (${parts.getOrElse(0) { "" }})/${parts.getOrElse(1) { "" }}"
-                        }
-                        else -> tempPath
-                    }
+                if (friendlyPath.matches(Regex("^\\d+$")) || friendlyPath.isEmpty()) {
+                    textView.text = cryText
+                } else {
+                    textView.text = friendlyPath
                 }
             }
-
-            textView.text = if (friendlyPath.isNotEmpty()) friendlyPath else "路径无效"
-
         } catch (e: Exception) {
-            Log.e(TAG, "查询文件夹名称失败", e)
-            textView.text = "无法显示路径"
+            textView.text = cryText
         }
     }
 
     private fun exportToFixedDir(tempFile: File, targetName: String, rootUri: Uri): Boolean {
         return try {
             val parentUri = DocumentsContract.buildDocumentUriUsingTree(rootUri, DocumentsContract.getTreeDocumentId(rootUri))
-            val outUri = DocumentsContract.createDocument(this.contentResolver, parentUri, if (targetName.endsWith(".flac", true)) "audio/flac" else "audio/mpeg", targetName)
+            val mime = if (targetName.endsWith(".flac", true)) "audio/flac" else "audio/mpeg"
+            val outUri = DocumentsContract.createDocument(this.contentResolver, parentUri, mime, targetName)
             outUri?.let {
                 this.contentResolver.openOutputStream(it)?.use { output ->
                     FileInputStream(tempFile).use { input -> input.copyTo(output) }
@@ -290,7 +276,7 @@ class MainActivity : AppCompatActivity(), FileListDialogFragment.OnConvertListen
             false
         }
     }
-    
+
     private fun clearCache() {
         this.cacheDir.listFiles()?.forEach { it.delete() }
     }

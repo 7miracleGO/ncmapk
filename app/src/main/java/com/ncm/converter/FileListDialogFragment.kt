@@ -97,6 +97,14 @@ class FileListDialogFragment : DialogFragment() {
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
 
+        adapter.setOnSelectionChangedListener { selectedCount, totalCount ->
+            if (totalCount > 0 && selectedCount == totalCount) {
+                btnSelectAll.text = "取消全选"
+            } else {
+                btnSelectAll.text = "全选"
+            }
+        }
+
         loadAndApplyUserSettings()
         scanAndPreProcessFiles()
 
@@ -105,9 +113,9 @@ class FileListDialogFragment : DialogFragment() {
 
         btnSelectAll.setOnClickListener {
             if (adapter.getSelectedFiles().size == adapter.itemCount) {
-                adapter.selectAll(false)
+                adapter.selectAll(false) // 已全选，则取消
             } else {
-                adapter.selectAll(true)
+                adapter.selectAll(true) // 未全选，则全选
             }
         }
 
